@@ -1,0 +1,222 @@
+@import url("https://fonts.googleapis.com/css2?family=Bangers&family=Comic+Neue:wght@400;700&display=swap");
+
+:root {
+  font-family: "Comic Neue", system-ui, sans-serif;
+  color: #fff8fb;
+  background: #0b0d12;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: linear-gradient(135deg, #1a1a2e 0%, #2b1055 40%, #2d0a5f 70%, #0b0d12 100%);
+  overflow-x: hidden;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background-image: linear-gradient(120deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0) 40%),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.03) 1px, transparent 1px, transparent 3px);
+  mix-blend-mode: screen;
+  opacity: 0.25;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem 4rem;
+  position: relative;
+  z-index: 1;
+}
+
+.app__header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.app__subtitle {
+  color: #ffe56b;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.title {
+  margin: 0 0 0.75rem;
+  display: grid;
+  gap: 0.4rem;
+  font-family: "Bangers", system-ui, sans-serif;
+  font-size: clamp(2.2rem, 4vw, 3.4rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.title__glow {
+  background: linear-gradient(90deg, #fffb00, #ff4bd8, #7cff6b, #6bdcff);
+  -webkit-background-clip: text;
+  color: transparent;
+  text-shadow: 3px 3px 0 #000, 0 0 10px rgba(255, 251, 0, 0.7);
+}
+
+.title__sub {
+  font-size: 0.8em;
+  color: #ff8bd8;
+  text-shadow: 2px 2px 0 #000;
+}
+
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 0.75rem;
+}
+
+.badge {
+  background: #2b0f45;
+  border: 2px dashed #ffe56b;
+  color: #fff;
+  padding: 0.35rem 0.9rem;
+  border-radius: 14px;
+  font-size: 0.85rem;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.card {
+  background: #1b1b2f;
+  border-radius: 20px;
+  padding: 2rem;
+  border: 3px solid #ff4bd8;
+  box-shadow: 6px 6px 0 #000;
+}
+
+.title-logo {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+}
+
+.title-logo__image {
+  max-width: 200px;
+  width: 100%;
+  height: auto;
+  filter: drop-shadow(6px 6px 0 #000) drop-shadow(0 0 10px rgba(255, 251, 0, 0.6));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+label {
+  font-size: 1rem;
+  color: #ffe56b;
+  text-shadow: 1px 1px 0 #000;
+}
+
+input {
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  border: 2px solid #6bdcff;
+  background: #0f1322;
+  color: #fff;
+  box-shadow: 3px 3px 0 #000;
+}
+
+input:focus {
+  outline: none;
+  border-color: #fffb00;
+  box-shadow: 0 0 0 3px rgba(255, 251, 0, 0.3), 3px 3px 0 #000;
+}
+
+button {
+  border: 2px solid #000;
+  border-radius: 12px;
+  padding: 0.75rem 1.2rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 4px 4px 0 #000;
+  font-family: "Comic Neue", system-ui, sans-serif;
+}
+
+button.primary {
+  background: linear-gradient(90deg, #fffb00, #ff4bd8);
+  color: #111;
+}
+
+button.primary:hover {
+  transform: translateY(-2px) scale(1.02) rotate(-1deg);
+}
+
+button.ghost {
+  background: #0f1322;
+  color: #6bdcff;
+  border: 2px dashed #6bdcff;
+  margin-top: 1.5rem;
+}
+
+.grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  margin-top: 1rem;
+}
+
+.tile {
+  background: #1c0f3a;
+  color: #fff;
+  border: 2px solid #7cff6b;
+  padding: 1rem;
+  border-radius: 12px;
+  text-align: left;
+  display: grid;
+  gap: 0.35rem;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 4px 4px 0 #000;
+}
+
+.tile:hover {
+  transform: translateY(-2px) scale(1.03) rotate(1deg);
+}
+
+.error {
+  color: #ff4bd8;
+  margin-top: 0.5rem;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.summary {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.paths {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.choice {
+  margin-top: 1rem;
+  color: #7cff6b;
+  text-shadow: 2px 2px 0 #000;
+}
+
+@keyframes flicker {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
