@@ -5,9 +5,49 @@
   import twoWayImg from "../../assets/two-way.webp";
   import threeWayImg from "../../assets/three-way.png";
 
+  let itemDetailsCache = {};
+
   const getAvailablePaths = (dungeon, position) => {
     const paths = dungeon?.paths?.[position];
     return Array.isArray(paths) ? paths : [];
+  };
+
+  const loadItemDetails = async (inventory) => {
+    if (!Array.isArray(inventory)) return;
+    
+    const uniqueIds = [...new Set(inventory)];
+    for (const itemId of uniqueIds) {
+      if (!itemDetailsCache[itemId]) {
+        try {
+          const item = await fetchItemById(itemId);
+          itemDetailsCache[itemId] = item;
+        } catch (err) {
+          console.error(`Failed to load item ${itemId}:`, err);
+        }
+      }
+    }
+  };
+
+  $: if ($gameStore.selectedPlayer?.inventory) {
+    loadItemDetails($gameStore.selectedPlayer.inventory);
+  }
+
+  const getInventoryDisplay = (inventory, cache) => {
+    if (!Array.isArray(inventory) || inventory.length === 0) {
+      return [];
+    }
+
+    const counts = {};
+    inventory.forEach(itemId => {
+      counts[itemId] = (counts[itemId] || 0) + 1;
+    });
+
+    return Object.entries(counts)
+      .filter(([, count]) => count > 0)
+      .map(([itemId, count]) => {
+        const name = itemDetailsCache[itemId]?.name || `Item ${itemId}`;
+        return `${name} : ${count}`;
+      });
   };
 
   const getChoiceIndex = (choice, pathCount) => {
@@ -68,6 +108,7 @@
             itemIds.map(async (itemId) => {
               const updatedPlayer = await addItemToInventory(player.id, itemId);
               const item = await fetchItemById(itemId);
+              itemDetailsCache[itemId] = item;
               return { item, updatedPlayer };
             })
           );
@@ -109,11 +150,12 @@
   
   <div class="summary" style="background: #1116; padding: 1rem 2rem; border-radius: 1rem; box-shadow: 0 0 16px #0008; max-width: 300px; margin-right: 2rem;">
     <p><strong>Brainrot:</strong> {$gameStore.selectedBrainrot?.name ?? "N/A"}</p>
+    <img src={`http://localhost:3000/api/v1/images/${$gameStore.selectedBrainrot?.image}`} alt={$gameStore.selectedBrainrot?.name} style="width: 100%; max-width: 200px; border-radius: 0.5rem; margin-bottom: 1rem;" />
     <p><strong>Level:</strong> {$gameStore.selectedPlayer?.level ?? "N/A"}</p>
     <p><strong> HP:</strong> {$gameStore.selectedBrainrot?.baseHP ?? "N/A"}</p>
     <p><strong> Inventory:</strong>
         {#if $gameStore.selectedPlayer?.inventory && $gameStore.selectedPlayer.inventory.length > 0}
-            {$gameStore.selectedPlayer.inventory.map(item => item.name).join(", ")}
+            {getInventoryDisplay($gameStore.selectedPlayer.inventory, itemDetailsCache).join(", ")}
         {:else}
             Empty
         {/if}

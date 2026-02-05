@@ -82,6 +82,7 @@
         on:click={() => handleSelectBrainrot(brainrot)}
         disabled={$authStore.isLoading}
       >
+        <img style="width: 200px; max-height: 200px;" src={`http://localhost:3000/api/v1/images/${brainrot.image}`} alt={brainrot.name} class="tile__image" />
         <strong>{brainrot.name}</strong>
         <span>HP: {brainrot.baseHP}</span>
         <span>Aura: {brainrot.baseAttack}</span>
