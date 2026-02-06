@@ -145,6 +145,26 @@
   const handleRestart = () => {
     resetStores();
   };
+
+  function getChoiceOption(position) {
+    const enemies = findEnemiesAtPosition(position);
+    if (enemies.length > 0) {
+        startBattle(enemies);
+    } else {
+        handlePathChoice(position);
+    }
+}
+
+function findEnemiesAtPosition(position) {
+    // TODO: Implement logic to find enemies at the specified position
+    return [];
+}
+
+function handleBattleOutcome(outcome) {
+    if (outcome === 'win') {
+    } else if (outcome === 'lose') {
+    }
+}
 </script>
 <section class="card" style="display: flex; flex-direction: row; align-items: center;">
   
