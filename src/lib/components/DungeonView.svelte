@@ -4,8 +4,16 @@
   import oneWayImg from "../../assets/one-way.webp";
   import twoWayImg from "../../assets/two-way.webp";
   import threeWayImg from "../../assets/three-way.png";
+	import { get } from "svelte/store"
+  import { API_URL } from "../api";
 
   let itemDetailsCache = {};
+  let isBattleHere = false;
+  let currentBattle = null;
+  let currentEnemies = [];
+  let battleStarted = false;
+  let battleChoices = [];
+
 
   const getAvailablePaths = (dungeon, position) => {
     const paths = dungeon?.paths?.[position];
@@ -73,6 +81,7 @@
   const handlePathChoice = async (choice) => {
     const save = $gameStore.selectedSave;
     const dungeon = $gameStore.currentDungeon;
+    
     if (!save || !dungeon) return;
 
     const currentPosition = save.playerPos || save.playerpos || "start";
@@ -83,6 +92,7 @@
     const nextPosition = availablePaths[choiceIndex] || availablePaths[0];
     const nextPaths = getAvailablePaths(dungeon, nextPosition);
     const nextPathCount = nextPaths.length > 0 ? nextPaths.length : 1;
+    
     try {
       itemNotice = "";
       const payload = {
@@ -137,6 +147,12 @@
         lastChoice: nextPosition,
         pathCount: nextPathCount
       }));
+
+      // Check for enemies at the new position
+      const enemies = findEnemiesAtPosition(nextPosition);
+      if (enemies.length > 0) {
+        await startBattle(enemies);
+      }
     } catch (err) {
       console.error("Error updating save:", err);
     }
@@ -146,25 +162,124 @@
     resetStores();
   };
 
-  function getChoiceOption(position) {
-    const enemies = findEnemiesAtPosition(position);
-    if (enemies.length > 0) {
-        startBattle(enemies);
-    } else {
-        handlePathChoice(position);
-    }
-}
-
-function findEnemiesAtPosition(position) {
+  function findEnemiesAtPosition(position) {
     // TODO: Implement logic to find enemies at the specified position
-    return [];
-}
-
-function handleBattleOutcome(outcome) {
-    if (outcome === 'win') {
-    } else if (outcome === 'lose') {
+    const dungeon = $gameStore.currentDungeon;
+    const enemiesAtPosition = [];
+    for (const [enemyId, positions] of Object.entries(dungeon?.enemies || {})) {
+      if (Array.isArray(positions) && positions.includes(position)) {
+        enemiesAtPosition.push(enemyId);
+      }
     }
-}
+    return enemiesAtPosition;
+  }
+
+  async function startBattle() {
+      await getBattle(1);
+      battleStarted = true;
+      battleChoices = currentBattle.choice;
+  }
+
+  async function getBattle(battleId) {
+    try {
+      const response = await fetch(`${API_URL}/api/v1/battle/${battleId}`, {
+        headers: {
+          'Authorization': `Bearer ${$authStore.accessToken}`
+        }
+      });
+
+      if (!response.ok) throw new Error('Failed to check battle status');
+      
+      currentBattle = await response.json();
+    } catch (err) {
+      console.error('Error checking battle status:', err);
+    }
+  }
+
+  async function handleBattleChoice(choiceId) {
+    try {
+      const response = await fetch(`http://localhost:${API_URL}/api/v1/battles/${currentBattle.id}/choose`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${$authStore.accessToken}`
+        },
+        body: JSON.stringify({
+          playerId: $gameStore.selectedPlayer.id,
+          choiceId: choiceId
+        })
+      });
+
+      if (!response.ok) throw new Error('Failed to send battle choice');
+      
+      const result = await response.json();
+      handleBattleOutcome(result);
+    } catch (err) {
+      console.error('Error handling battle choice:', err);
+    }
+  }
+
+  async function handleBattleOutcome(result) {
+    if (result.status === 'win') {
+      // Battle won - clear battle state and return to path selection
+      currentBattle = null;
+      battleChoices = [];
+      currentEnemies = [];
+      isBattleHere = false;
+      battleStarted = false;
+    } else if (result.status === 'lose') {
+      // Battle lost - handle defeat
+      currentBattle = null;
+      battleChoices = [];
+      currentEnemies = [];
+      isBattleHere = false;
+      battleStarted = false;
+      
+      // Reset player position to start of dungeon
+      await handleDefeat();
+    }
+  }
+
+  async function handleDefeat() {
+    const save = $gameStore.selectedSave;
+    const dungeon = $gameStore.currentDungeon;
+    
+    if (!save || !dungeon) return;
+
+    try {
+      // Reset position to start
+      const payload = {
+        realizedDungeons: save.realizedDungeons ?? save.realizeddungeons ?? [],
+        currentDungeonId: save.currentDungeonId ?? save.currentdungeonid ?? null,
+        currentFightId: save.currentFightId ?? save.currentfightid ?? 0,
+        playerId: save.playerId ?? save.playerid ?? null,
+        userId: save.userId ?? save.userid ?? null,
+        playerPos: "start"
+      };
+
+      const updated = await updateSave(
+        save.id,
+        payload,
+        $authStore.accessToken
+      );
+
+      // Get paths at start position
+      const startPaths = getAvailablePaths(dungeon, "start");
+      const pathCount = startPaths.length > 0 ? startPaths.length : 1;
+
+      // Update store with reset position
+      gameStore.update(store => ({
+        ...store,
+        selectedSave: updated,
+        lastChoice: "start",
+        pathCount: pathCount
+      }));
+
+      itemNotice = "You were defeated and returned to the start!";
+    } catch (err) {
+      console.error("Error handling defeat:", err);
+    }
+  }
 </script>
 <section class="card" style="display: flex; flex-direction: row; align-items: center;">
   
@@ -196,20 +311,35 @@ function handleBattleOutcome(outcome) {
             {/if}
         </div>
 
-        <div class="paths-flex">
-            {#if $gameStore.pathCount === 1}
-            <button class="primary" on:click={() => handlePathChoice("Forward")}>Go forward</button>
-            {:else if $gameStore.pathCount === 2}
-            <button class="primary" on:click={() => handlePathChoice("Left")}>Go left</button>
-            <button class="primary" on:click={() => handlePathChoice("Right")}>Go right</button>
-            {:else if $gameStore.pathCount === 3}
-            <button class="primary" on:click={() => handlePathChoice("Left")}>Go left</button>
-            <button class="primary" on:click={() => handlePathChoice("Forward")}>Go forward</button>
-            <button class="primary" on:click={() => handlePathChoice("Right")}>Go right</button>
-            {:else if $gameStore.pathCount === 0}
-            <p>No available paths. You might be at the end of the dungeon.</p>
-            {/if}
-        </div>
+        {#if currentBattle}
+          <div class="battle-container">
+            <p><strong>Battle in Progress!</strong></p>
+            <p>Choose your action:</p>
+            <div class="battle-choices">
+              {#each battleChoices as ch}
+                <button class="primary" on:click={() => handleBattleChoice(ch.id)}>
+                  {ch.name || ch.id}
+                </button>
+              {/each}
+            </div>
+          </div>
+        {:else}
+          <div class="paths-flex">
+              {#if $gameStore.pathCount === 1}
+              <button class="primary" on:click={() => handlePathChoice("Forward")}>Go forward</button>
+              {:else if $gameStore.pathCount === 2}
+              <button class="primary" on:click={() => handlePathChoice("Left")}>Go left</button>
+              <button class="primary" on:click={() => handlePathChoice("Right")}>Go right</button>
+              {:else if $gameStore.pathCount === 3}
+              <button class="primary" on:click={() => handlePathChoice("Left")}>Go left</button>
+              <button class="primary" on:click={() => handlePathChoice("Forward")}>Go forward</button>
+              <button class="primary" on:click={() => handlePathChoice("Right")}>Go right</button>
+              {:else if $gameStore.pathCount === 0}
+              <p>No available paths. You might be at the end of the dungeon.</p>
+              {/if}
+          </div>
+        {/if}
+        
     </div>
 </section>
 
@@ -241,6 +371,20 @@ function handleBattleOutcome(outcome) {
     justify-content: center;
     gap: 2rem;
     margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .battle-container {
+    padding: 2rem;
+    border: 2px solid #ff6b6b;
+    border-radius: 1rem;
+    background: #1a0000;
+    margin: 2rem 0;
+  }
+  .battle-choices {
+    display: flex;
+    justify-content: center;
+    gap: 2rem;
+    margin-top: 1.5rem;
     flex-wrap: wrap;
   }
 </style>

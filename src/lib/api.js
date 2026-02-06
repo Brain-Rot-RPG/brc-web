@@ -64,7 +64,7 @@ export const updateSave = async (saveId, savePayload, accessToken) => {
 
   return response.json();
 };
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
+export const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 // Utilitaires
 export const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1)) + min;
